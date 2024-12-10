@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self' http://localhost:8080; style-src 'self' 'unsafe-inline'">
+
+    <link href="./styles.css" rel="stylesheet">
+    <title>Cloud Solver(ver1.0)</title>
+  </head>
+  <body>
+    <h1>Cloud Solver(ver1.0)</h1>
+
+    <div>
+      <button id="upload_button">Upload Model</button>
+    </div>
+    
+    <div class="output-box" id="output-box">
+      [Output]
+    </div>
+
+    <table id="dynamic-table">
+      <colgroup>
+        <col style="width: 10%;"> <!-- Number -->
+        <col style="width: 60%;"> <!-- Name -->
+        <col style="width: 20%;"> <!-- Status -->
+        <col style="width: 10%;"> <!-- Download -->
+      </colgroup>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be dynamically added here -->
+      </tbody>
+    </table>
+
+    <!-- <div class="button-container">
+      <button id="run_button">Run Analysis</button>
+      <button id="abort_button">Abort Analysis</button>
+    </div> -->
+    <!-- You can also require other files to run in this process -->
+    <script src="./renderer.js"></script>
+  </body>
+</html>
