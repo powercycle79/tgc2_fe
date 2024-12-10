@@ -127,9 +127,7 @@ function renderTable(data) {
                 const buffer = window.nodeAPI.Buffer(arrayBuffer, 'base64');
                 const base64Data = buffer.toString();
 
-                const saveResult = await window.fileApi.saveFile(base64Data);
-
-                console.log('saveResult :', saveResult);
+                const saveResult = await window.fileApi.saveFile(item.name, base64Data);
 
                 if(saveResult.success) {
                     console.log('File saved successfully');

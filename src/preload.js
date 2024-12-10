@@ -29,8 +29,8 @@ contextBridge.exposeInMainWorld("fileApi", {
     getServerUrl: () => {
       return ipcRenderer.invoke("get-server-url");
     },
-    saveFile: async (blobData) => {
-      const filePath = await ipcRenderer.invoke("file-save");
+    saveFile: async (fileName, blobData) => {
+      const filePath = await ipcRenderer.invoke("file-save", {fileName});
       return await ipcRenderer.invoke("blob-to-file", {filepath: filePath, blobData: blobData});
     }
 });

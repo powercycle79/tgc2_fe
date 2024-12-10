@@ -65,33 +65,9 @@ ipcMain.handle('file-select', async () => {
     return undefined;
 });
 
-ipcMain.handle('file-save', async () => {
-  const fileSave = dialog.showSaveDialogSync({ defaultPath, properties: ['openFile' | 'createDirectory' | 'showOverwriteConfirmation'],
-    filters: [
-      { name: 'zip File', extensions: ['zip'] }
-    ] });
-
-    if(fileSave.length > 0) {
-        const selected = fileSave;
-        return selected;
-    }
-    return undefined;
-});
-
-ipcMain.handle('blob-to-file', async (event, {filepath, blobData}) => {
-  try {
-    // blobData는 Base64로 인코딩된 문자열이므로 디코딩 후 버퍼로 변환
-    const buffer = Buffer.from(blobData, 'base64');
-    fs.writeFileSync(filepath, buffer);
-    return { success: true };
-  } catch (error) {
-    console.error('Error saving file:', error);
-    return { success: false, error: error.message };
-  }
-});
-
 const {basename} = require("node:path");
 const serverUrl = "http://localhost:8080";
+ipcMain.handle('get-server-url', () => serverUrl);
 
 ipcMain.handle('file-upload', async (event, args) => {
     const {filePath} = args;
@@ -119,4 +95,30 @@ ipcMain.handle('file-upload', async (event, args) => {
   }
 });
 
-ipcMain.handle('get-server-url', () => serverUrl);
+ipcMain.handle('file-save', async (event, args) => {
+  const {fileName} = args;
+  const fileNameExt = fileName + '.zip';
+  const defaultPathName = path.join(defaultPath, fileNameExt);
+  const fileSave = dialog.showSaveDialogSync({ defaultPath: defaultPathName, properties: ['openFile' | 'createDirectory' | 'showOverwriteConfirmation'],
+    filters: [
+      { name: 'zip File', extensions: ['zip'] }
+    ] });
+
+    if(fileSave.length > 0) {
+        const selected = fileSave;
+        return selected;
+    }
+    return undefined;
+});
+
+ipcMain.handle('blob-to-file', async (event, {filepath, blobData}) => {
+  try {
+    // blobData는 Base64로 인코딩된 문자열이므로 디코딩 후 버퍼로 변환
+    const buffer = Buffer.from(blobData, 'base64');
+    fs.writeFileSync(filepath, buffer);
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving file:', error);
+    return { success: false, error: error.message };
+  }
+});
