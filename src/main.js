@@ -97,7 +97,7 @@ ipcMain.handle('file-upload', async (event, args) => {
 
 ipcMain.handle('file-save', async (event, args) => {
   const {fileName} = args;
-  const fileNameExt = fileName + '.zip';
+  const fileNameExt = fileName;
   const defaultPathName = path.join(defaultPath, fileNameExt);
   const fileSave = dialog.showSaveDialogSync({ defaultPath: defaultPathName, properties: ['openFile' | 'createDirectory' | 'showOverwriteConfirmation'],
     filters: [
@@ -113,8 +113,7 @@ ipcMain.handle('file-save', async (event, args) => {
 
 ipcMain.handle('blob-to-file', async (event, {filepath, blobData}) => {
   try {
-    // blobData는 Base64로 인코딩된 문자열이므로 디코딩 후 버퍼로 변환
-    const buffer = Buffer.from(blobData, 'base64');
+    const buffer = Buffer.from(blobData);
     fs.writeFileSync(filepath, buffer);
     return { success: true };
   } catch (error) {
