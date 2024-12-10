@@ -25,3 +25,5 @@ yarn-error.log*
 _*
 files/*
 dist
+package.json
+package-lock.json
