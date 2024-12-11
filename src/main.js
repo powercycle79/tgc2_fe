@@ -6,7 +6,7 @@ function createWindow () {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1000,
-    height: 1000,
+    height: 1200,
     webPreferences: {
       //webSecurity: true,
       //nodeIntegration: true,
@@ -97,7 +97,7 @@ ipcMain.handle('file-upload', async (event, args) => {
 
 ipcMain.handle('file-save', async (event, args) => {
   const {fileName} = args;
-  const fileNameExt = fileName;
+  const fileNameExt = fileName + '.zip';
   const defaultPathName = path.join(defaultPath, fileNameExt);
   const fileSave = dialog.showSaveDialogSync({ defaultPath: defaultPathName, properties: ['openFile' | 'createDirectory' | 'showOverwriteConfirmation'],
     filters: [
