@@ -17,14 +17,12 @@ const getFileList = async () => {
     const requestOptions = {
         method: "GET",
         headers: myHeaders,
-        redirect: "follow"
     };
 
     return await fetch(`${await serverUrl()}/file/list`, requestOptions)
         .then((response) => response.json())
         .catch((error) => console.error(error));
 }
-
 const getAnalysisStatus = async (analysisId) => {
     const myHeaders = new Headers();
     myHeaders.append("Accept", "*/*");
@@ -32,7 +30,6 @@ const getAnalysisStatus = async (analysisId) => {
     const requestOptions = {
         method: "GET",
         headers: myHeaders,
-        redirect: "follow"
     };
 
     return await fetch(`${await serverUrl()}/analyze/${analysisId}/status`, requestOptions)
@@ -46,14 +43,12 @@ const getAnalysisIdByFileId = async (fileId) => {
     const requestOptions = {
         method: "GET",
         headers: myHeaders,
-        redirect: "follow"
     };
 
     return fetch(`${await serverUrl()}/analyze/files/${fileId}`, requestOptions)
         .then((response) => response.json())
         .catch((error) => console.error(error));
 }
-
 const getLogs = async (analysisId) => {
     const myHeaders = new Headers();
     myHeaders.append("Accept", "*/*");
@@ -61,14 +56,12 @@ const getLogs = async (analysisId) => {
     const requestOptions = {
         method: "GET",
         headers: myHeaders,
-        redirect: "follow"
     };
 
     return await fetch(`${await serverUrl()}/analyze/${analysisId}/log`, requestOptions)
         .then((response) => response.json())
         .catch((error) => console.error(error));
 }
-
 const downloadFile = async (fileId) => {
     console.log('fileId :', fileId);
     const myHeaders = new Headers();
@@ -77,11 +70,26 @@ const downloadFile = async (fileId) => {
     const requestOptions = {
         method: "GET",
         headers: myHeaders,
-        redirect: "follow"
     };
 
     return await fetch(`${await serverUrl()}/file/${fileId}/download`, requestOptions)
         .then((response) => response.blob())
+        .catch((error) => console.error(error));
+}
+const getResultFileByAnalysisId = async (analysisId) => {
+    const myHeaders = new Headers();
+    myHeaders.append("Accept", "*/*");
+
+    const requestOptions = {
+        method: "GET",
+        headers: myHeaders,
+    };
+
+    return await fetch(`${await serverUrl()}/analyze/${analysisId}/result`, requestOptions)
+        .then((response) => response.json())
+        .then(
+            ({files}) => files.map(async (file) => await fetch(`${await serverUrl()}/file/${file.id}/download`, requestOptions).then((response) => response.blob()))
+        )
         .catch((error) => console.error(error));
 }
 
@@ -121,19 +129,25 @@ function renderTable(data) {
         downloadButton.style.cursor = "pointer";
 
         // 버튼 클릭 이벤트 추가
-        downloadButton.addEventListener("click", () => {
-            downloadFile(item.id).then(async (blob) => {
-                const arrayBuffer = await blob.arrayBuffer();
-                const buffer = window.nodeAPI.Buffer(arrayBuffer, 'base64');
-                const base64Data = buffer.toString();
-
-                const saveResult = await window.fileApi.saveFile(item.name, base64Data);
-
-                if(saveResult.success) {
-                    console.log('File saved successfully');
-                } else {
-                    console.error('Error saving file:', saveResult.error);
+        downloadButton.addEventListener("click", async () => {
+            const analysisId = await getAnalysisIdByFileId(item.id);
+            getResultFileByAnalysisId(analysisId).then(async (blobs) => {
+                const fileDownload = async (blob) => {
+                    const file = await blob
+                    const arrayBuffer = await file.arrayBuffer();
+                    const saveResult = await window.fileApi.saveFile(item.name, arrayBuffer);
+                    if (saveResult.success) {
+                        console.log('File saved successfully');
+                    } else {
+                        console.error('Error saving file:', saveResult.error);
+                    }
                 }
+
+                if (Array.isArray(blobs)) {
+                    blobs.forEach(fileDownload);
+                    return;
+                }
+                fileDownload(blobs);
             });
         });
 
@@ -145,13 +159,13 @@ function renderTable(data) {
     });
 }
 
-function getList(){
+function getList() {
     const files = [];
     for (let i = 0; i < window.localStorage.length; i++) {
         const key = window.localStorage.key(i);
         const value = window.localStorage.getItem(key);
         const valueObj = JSON.parse(value);
-        files.push({id: key, name: valueObj.name, status: valueObj.status});
+        files.push({ id: key, name: valueObj.name, status: valueObj.status });
     }
 
     files.sort((a, b) => {
@@ -167,13 +181,14 @@ const refreshTable = async () => {
     window.localStorage.clear();
 
     getFileList().then(async (list) => {
-        for(let i = 0; i < list.length; i++) {
+        for (let i = 0; i < list.length; i++) {
             const data = list[i];
-            const status = await getAnalysisStatus(data.id);
+            const analysisId = await getAnalysisIdByFileId(data.id);
+            const status = await getAnalysisStatus(analysisId);
 
-            window.localStorage.setItem(data.id, JSON.stringify({name: data.name, status: status}));
+            window.localStorage.setItem(data.id, JSON.stringify({ name: data.name, status: status }));
         }
-    }).then(()=>{
+    }).then(() => {
         renderTable(getList());
     });
 }
@@ -188,12 +203,12 @@ document.getElementById('upload_button').onclick = async () => {
             if (data) {
                 const fileId = data.id;
                 console.log('data :', data);
-                if(window.localStorage.getItem(fileId)) {
+                if (window.localStorage.getItem(fileId)) {
                     document.getElementById('output-box').textContent = 'file already uploaded';
                     return;
                 }
 
-                window.localStorage.setItem(fileId, JSON.stringify({name: data.name, status: "UPLOADED"}));
+                window.localStorage.setItem(fileId, JSON.stringify({ name: data.name, status: "UPLOADED" }));
 
                 renderTable(getList());
 
@@ -202,10 +217,10 @@ document.getElementById('upload_button').onclick = async () => {
                 messages.push('Analysis started');
                 const outputBox = document.getElementById('output-box');
                 const analysisId = await getAnalysisIdByFileId(fileId);
-                
-                while(await getAnalysisStatus(fileId) === "RUNNING") {
+
+                while (await getAnalysisStatus(analysisId) === "RUNNING") {
                     const logs = await getLogs(analysisId);
-                    for(let i = messages.length - 2; i < logs.length; i++) {
+                    for (let i = messages.length - 2; i < logs.length; i++) {
                         messages.push(logs[i].message);
                     }
 
@@ -213,7 +228,7 @@ document.getElementById('upload_button').onclick = async () => {
                     outputBox.textContent = log;
                     outputBox.scrollTop = outputBox.scrollHeight;
                 }
-                
+
                 messages.push('Analysis done');
                 const log = messages.join("\n");
                 outputBox.textContent = log;
